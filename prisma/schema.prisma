@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Prisma schema file
 
 generator client {
   provider = "prisma-client-js"
@@ -14,35 +10,54 @@ datasource db {
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
-  name      String
-  email     String     @unique
-  password  String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  transactions Transaction[]
+  id          String   @id @default(uuid()) @db.Uuid // Identificador único como UUID
+  name        String
+  email       String   @unique
+  password    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  transactions Transaction[] // Relacionamento com transações
 }
-
 model Transaction {
-  id          Int                 @id @default(autoincrement())
-  amount      Float
-  date        DateTime            @default(now())
-  description String
-  userId      Int
-  user        User                @relation(fields: [userId], references: [id])
-  categories  TransactionCategory[]
+  id          String   @id @default(uuid()) @db.Uuid // Identificador único como UUID
+  userId      String   @db.Uuid // Relacionamento com usuário, agora como String e anotação @db.Uuid
+  amount      Float    // Valor da transação
+  type        TransactionType // Tipo de transação (Entrada ou Saída)
+  category    String   // Categoria da transação
+  description String?  // Descrição opcional
+  date        DateTime @default(now()) // Data da transação
+  paymentType PaymentType // Tipo de pagamento
+  installments Int?    // Quantidade de parcelas (opcional)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories TransactionCategory[] // Relacionamento com categorias de transações
 }
 
 model Category {
   id              Int                 @id @default(autoincrement())
   name            String              @unique
-  transactions    TransactionCategory[]
+  transactions    TransactionCategory[] // Relacionamento com categorias de transações
 }
 
 model TransactionCategory {
-  id          Int       @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   transaction Transaction @relation(fields: [transactionId], references: [id])
   category    Category   @relation(fields: [categoryId], references: [id])
-  transactionId Int
+  transactionId String    // Altere de Int para String, para coincidir com Transaction.id
   categoryId   Int
+}
+
+enum TransactionType {
+  INCOME  // Entrada de dinheiro
+  EXPENSE // Saída de dinheiro
+}
+
+enum PaymentType {
+  CASH      // Dinheiro
+  CREDIT    // Cartão de crédito
+  DEBIT     // Cartão de débito
+  PIX       // Transferência PIX
+  BOLETO    // Boleto bancário
+  TRANSFER  // Transferência bancária
+  OTHER     // Outro
 }
